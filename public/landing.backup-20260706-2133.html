@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>bilibili_learning_bot — 全自动 B 站 AI 学习机器人</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ===== CSS Variables ===== */
+:root {
+  --bg: #080B14;
+  --bg-alt: #111627;
+  --bg-card: #0D1120;
+  --text: #F0F2F8;
+  --text-secondary: #8890A8;
+  --text-tertiary: #555B70;
+  --accent: #6C5CE7;
+  --accent-hover: #8B7CF0;
+  --accent-bg: rgba(108,92,231,0.1);
+  --accent-glow: #00D2FF;
+  --accent-gradient: linear-gradient(135deg, #6C5CE7, #00D2FF);
+  --border: #1E2338;
+  --border-light: #15192B;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --radius-pill: 999px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ===== Utility ===== */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+/* ===== Navigation ===== */
+nav {
+  position: fixed;
+  top: 18px; left: 0; right: 0;
+  z-index: 100;
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+nav.scrolled {
+  transform: translateY(-4px);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: fit-content;
+  margin: 0 28px 0 auto;
+  padding: 6px;
+  background: rgba(8,11,20,0.34);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.16);
+  pointer-events: auto;
+}
+
+.nav-logo {
+  display: none;
+}
+
+.nav-logo img {
+  height: 20px;
+  width: auto;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: rgba(255,255,255,0.62);
+  font-size: 12px;
+  font-weight: 600;
+  transition: color 0.2s;
+  position: relative;
+  padding: 6px 10px;
+}
+
+.nav-links a:hover {
+  color: var(--text);
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background: var(--accent);
+  transition: width 0.25s ease;
+}
+
+.nav-links a:hover::after {
+  width: 100%;
+}
+
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px !important;
+  background: rgba(108,92,231,0.72);
+  color: #FFF !important;
+  border-radius: var(--radius-pill);
+  font-size: 12px !important;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+.nav-btn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(108,92,231,0.3);
+}
+
+.nav-btn::after { display: none !important; }
+
+/* Mobile nav */
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px;
+}
+
+.nav-toggle span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 1px;
+  transition: all 0.3s ease;
+}
+
+/* ===== Hero Section ===== */
+#hero {
+  min-height: 100vh;
+  padding: 150px 0 90px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+#hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(108,92,231,0.28), transparent 34%),
+    radial-gradient(circle at 78% 28%, rgba(0,210,255,0.14), transparent 28%),
+    linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+  background-size: auto, auto, 52px 52px, 52px 52px;
+  mask-image: linear-gradient(to bottom, #000 0%, #000 62%, transparent 100%);
+  z-index: -3;
+}
+
+#hero::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 115px;
+  width: min(980px, 90vw);
+  height: 420px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(108,92,231,0.22), transparent 65%);
+  filter: blur(28px);
+  z-index: -2;
+}
+
+.hero-bg-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+  z-index: -1;
+  animation: glow-drift 9s ease-in-out infinite alternate;
+}
+
+.hero-bg-glow.g1 {
+  width: 520px; height: 520px;
+  top: -130px; left: 8%;
+  background: rgba(108,92,231,0.18);
+}
+
+.hero-bg-glow.g2 {
+  width: 440px; height: 440px;
+  bottom: 120px; right: 6%;
+  background: rgba(0,210,255,0.12);
+  animation-delay: -4s;
+}
+
+@keyframes glow-drift {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(40px, -30px) scale(1.12); }
+}
+
+.hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  margin-bottom: 26px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-pill);
+  background: rgba(255,255,255,0.045);
+  color: #B8C2FF;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+  opacity: 0;
+  transform: translateY(18px);
+  transition: all 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.hero-kicker.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hero-kicker-mark {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  box-shadow: 0 0 16px rgba(0,210,255,0.8);
+}
+
+.hero-title {
+  max-width: 920px;
+  margin: 0 auto 22px;
+  font-size: clamp(3.2rem, 7vw, 5.6rem);
+  font-weight: 800;
+  letter-spacing: -3.5px;
+  line-height: 1.02;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.75s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition-delay: 0.08s;
+}
+
+.hero-title.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hero-title .accent {
+  background: linear-gradient(120deg, #FFFFFF 0%, #9EA8FF 35%, #39D8FF 70%, #FFFFFF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-desc {
+  font-size: clamp(1rem, 1.7vw, 1.22rem);
+  font-weight: 400;
+  color: #AAB2CB;
+  max-width: 720px;
+  margin: 0 auto 36px;
+  line-height: 1.75;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition-delay: 0.18s;
+}
+
+.hero-desc.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition-delay: 0.3s;
+  margin-bottom: 42px;
+}
+
+.hero-actions.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 34px;
+  background: linear-gradient(135deg, #7C6CFF, #18C8FF);
+  color: #FFF;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 12px 34px rgba(78,91,255,0.34);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 45px rgba(78,91,255,0.48);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  background: rgba(255,255,255,0.055);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.14);
+  transition: all 0.3s ease;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.btn-secondary:hover {
+  border-color: rgba(255,255,255,0.34);
+  background: rgba(255,255,255,0.085);
+  transform: translateY(-2px);
+}
+
+.hero-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  width: fit-content;
+  margin: 0 auto 18px;
+  padding: 14px 20px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-pill);
+  background: rgba(8,11,20,0.58);
+  backdrop-filter: blur(18px);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition-delay: 0.44s;
+}
+
+.hero-stats.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hero-stat {
+  min-width: 112px;
+  text-align: center;
+}
+
+.hero-stat-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+
+.hero-stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  letter-spacing: 0.3px;
+}
+
+.hero-stat-divider {
+  width: 1px;
+  height: 34px;
+  background: rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+
+.hero-console {
+  max-width: 980px;
+  margin: 34px auto 0;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(17,22,39,0.92), rgba(9,12,24,0.92));
+  box-shadow: 0 34px 90px rgba(0,0,0,0.42), 0 0 0 1px rgba(255,255,255,0.03) inset;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(16px) scale(0.99);
+  transition: all 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition-delay: 0.12s;
+}
+
+.hero-console.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.console-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.035);
+}
+
+.console-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.console-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.22);
+}
+
+.console-title {
+  color: #8D96B3;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.console-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #63E6BE;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.console-status::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #63E6BE;
+  box-shadow: 0 0 14px rgba(99,230,190,0.8);
+}
+
+.console-body {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 18px;
+  padding: 22px;
+}
+
+.console-panel {
+  padding: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.035);
+  text-align: left;
+}
+
+.console-panel h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #F6F8FF;
+}
+
+.pipeline-row {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.pipeline-row:last-child {
+  border-bottom: none;
+}
+
+.pipeline-index {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(108,92,231,0.16);
+  color: #AFA8FF;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pipeline-name {
+  color: #DDE3F8;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pipeline-meta {
+  color: #7F89A8;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.pipeline-state {
+  color: #63E6BE;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.score-card {
+  padding: 18px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(108,92,231,0.18), rgba(0,210,255,0.08));
+  border: 1px solid rgba(108,92,231,0.24);
+  margin-bottom: 14px;
+}
+
+.score-number {
+  font-size: 42px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -2px;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.score-label {
+  color: #AAB2CB;
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+.console-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.console-tags span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.055);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #AAB2CB;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ===== Section Common ===== */
+.section-header {
+  text-align: center;
+  margin-bottom: 64px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.section-header.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.section-tag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 1.8rem;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+  margin-bottom: 12px;
+}
+
+.section-desc {
+  font-size: 15px;
+  color: var(--text-secondary);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* ===== Intro Section ===== */
+#intro {
+  padding: 88px 0 64px;
+}
+
+.intro-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 22px;
+  align-items: stretch;
+}
+
+.intro-card {
+  position: relative;
+  padding: 34px;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(17,22,39,0.86), rgba(10,13,24,0.86));
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(24px);
+  transition: all 0.65s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.intro-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.intro-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: radial-gradient(circle at 20% 0%, rgba(108,92,231,0.18), transparent 35%);
+  pointer-events: none;
+}
+
+.intro-card > * {
+  position: relative;
+}
+
+.intro-eyebrow {
+  color: #8EA0FF;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.intro-card h2 {
+  font-size: 2rem;
+  line-height: 1.2;
+  letter-spacing: -1px;
+  margin-bottom: 16px;
+}
+
+.intro-card p {
+  color: #AAB2CB;
+  font-size: 15px;
+  line-height: 1.8;
+  margin-bottom: 18px;
+}
+
+.intro-points {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.intro-point {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.intro-point-index {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: rgba(108,92,231,0.16);
+  color: #AFA8FF;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.intro-point h3 {
+  font-size: 14px;
+  color: #F4F7FF;
+  margin-bottom: 3px;
+}
+
+.intro-point span {
+  display: block;
+  color: #7F89A8;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.scenario-list {
+  display: grid;
+  gap: 12px;
+}
+
+.scenario-item {
+  padding: 16px 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.035);
+}
+
+.scenario-item strong {
+  display: block;
+  color: #F4F7FF;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.scenario-item span {
+  color: #8F99B8;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.narration-box {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(0,210,255,0.07);
+  border: 1px solid rgba(0,210,255,0.16);
+  color: #BEEFFF;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* ===== Features Grid ===== */
+#features {
+  padding: 80px 0;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 36px 28px;
+  opacity: 0;
+  filter: blur(8px);
+  transform: scale(0.94);
+  transition: all 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+}
+
+.feature-card.visible {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+
+.feature-card:nth-child(1) { transition-delay: 0.05s; }
+.feature-card:nth-child(2) { transition-delay: 0.12s; }
+.feature-card:nth-child(3) { transition-delay: 0.19s; }
+.feature-card:nth-child(4) { transition-delay: 0.16s; }
+.feature-card:nth-child(5) { transition-delay: 0.23s; }
+.feature-card:nth-child(6) { transition-delay: 0.30s; }
+
+.feature-card:hover {
+  border-color: rgba(108,92,231,0.3);
+  transform: translateY(-4px);
+  background: var(--bg-alt);
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(108,92,231,0.4), transparent);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.feature-card:hover::before {
+  opacity: 1;
+}
+
+.feature-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-bg);
+  border: 1px solid rgba(108,92,231,0.15);
+  border-radius: 8px;
+  margin-bottom: 18px;
+  font-size: 18px;
+  color: var(--accent);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover .feature-icon {
+  background: rgba(108,92,231,0.18);
+  border-color: rgba(108,92,231,0.3);
+}
+
+.feature-card h3 {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  letter-spacing: -0.1px;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.feature-card:hover h3 {
+  color: var(--accent);
+}
+
+.feature-card p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  position: relative;
+}
+
+/* ===== Flow Section ===== */
+#flow {
+  padding: 80px 0;
+}
+
+.flow-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  flex-wrap: wrap;
+  padding: 20px 0;
+}
+
+.flow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 22px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  min-width: 130px;
+  transition: all 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.flow-step::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(108,92,231,0.15) 50%, transparent 100%);
+  transition: left 0.6s ease;
+}
+
+.flow-step.lit::after {
+  left: 100%;
+}
+
+.flow-step.lit {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(108,92,231,0.15);
+}
+
+.flow-step-icon {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+  transition: all 0.3s ease;
+  letter-spacing: 0.5px;
+}
+
+.flow-step.lit .flow-step-icon {
+  color: var(--accent);
+  transform: scale(1.1);
+}
+
+.flow-step-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+  white-space: nowrap;
+}
+
+.flow-step.lit .flow-step-label {
+  color: var(--accent);
+}
+
+.flow-arrow {
+  font-size: 18px;
+  color: var(--text-tertiary);
+  margin: 0 8px;
+  transition: all 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+  display: flex;
+  align-items: center;
+}
+
+.flow-arrow.lit {
+  color: var(--accent);
+  transform: scale(1.25);
+}
+
+/* ===== CTA ===== */
+#cta {
+  padding: 100px 0 100px;
+  position: relative;
+}
+
+#cta::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(800px, 90vw);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+
+.cta-inner {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.cta-inner.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cta-inner h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  line-height: 1.2;
+  margin-bottom: 14px;
+}
+
+.cta-inner h2 .accent {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.cta-inner p {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  max-width: 440px;
+  margin: 0 auto 32px;
+}
+
+.cta-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.cta-buttons .btn-primary {
+  padding: 14px 40px;
+  font-size: 15px;
+}
+
+.cta-buttons .btn-secondary {
+  padding: 14px 28px;
+  font-size: 15px;
+}
+
+/* ===== Footer ===== */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 0;
+  text-align: center;
+}
+
+footer p {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+footer a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+footer a:hover {
+  color: var(--accent);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  .container {
+    padding: 0 24px;
+  }
+
+  .nav-inner {
+    padding: 0 24px;
+  }
+
+  .nav-links {
+    display: none;
+    position: fixed;
+    top: 70px;
+    left: 24px;
+    right: 24px;
+    background: rgba(8,11,20,0.94);
+    backdrop-filter: blur(20px);
+    flex-direction: column;
+    padding: 20px;
+    gap: 18px;
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 18px;
+  }
+
+  .nav-links.open {
+    display: flex;
+  }
+
+  .nav-toggle {
+    display: flex;
+  }
+
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .intro-grid,
+  .console-body {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-title {
+    letter-spacing: -2px;
+  }
+
+  .cta-inner {
+    padding: 0 24px;
+  }
+
+  .flow-container {
+    gap: 12px;
+  }
+
+  .flow-arrow {
+    display: none;
+  }
+
+  #hero {
+    padding: 140px 0 60px;
+  }
+}
+
+@media (max-width: 600px) {
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .hero-actions .btn-primary,
+  .hero-actions .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav id="navbar">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <img src="/logo.svg" alt="logo" onerror="this.style.display='none'">
+      bilibili_learning_bot
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="https://github.com/xiaoyaya191/bilibili_learning_bot" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="https://bot1.bxya.top/" target="_blank" rel="noopener" class="nav-btn">快速开始 →</a></li>
+    </ul>
+    <button class="nav-toggle" id="navToggle" aria-label="菜单">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section id="hero">
+  <div class="hero-bg-glow g1"></div>
+  <div class="hero-bg-glow g2"></div>
+  <div class="container">
+    <div class="hero-kicker" data-reveal>
+      <span class="hero-kicker-mark"></span>
+      Agentic Bilibili Learning Automation
+    </div>
+    <h1 class="hero-title" data-reveal>
+      让 AI 自动筛选、理解并沉淀<br><span class="accent">B站学习内容</span>
+    </h1>
+    <p class="hero-desc" data-reveal>
+      面向知识型创作者和自媒体运营的自动化学习机器人：从推荐流发现、封面过滤、AI 深度理解，到评分收藏投币与知识归档，全流程无人值守运行。
+    </p>
+    <div class="hero-actions" data-reveal>
+      <a href="https://bot1.bxya.top/" target="_blank" rel="noopener" class="btn-primary">
+        快速开始
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+      <a href="https://github.com/xiaoyaya191/bilibili_learning_bot" target="_blank" rel="noopener" class="btn-secondary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        GitHub
+      </a>
+    </div>
+    <div class="hero-stats" data-reveal>
+      <div class="hero-stat">
+        <div class="hero-stat-value">MIT</div>
+        <div class="hero-stat-label">开源协议</div>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">Docker</div>
+        <div class="hero-stat-label">一键部署</div>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">7×24</div>
+        <div class="hero-stat-label">无人值守</div>
+      </div>
+    </div>
+    <div class="hero-console" data-reveal>
+      <div class="console-topbar">
+        <div class="console-dots"><span></span><span></span><span></span></div>
+        <div class="console-title">bilibili_learning_bot / automation pipeline</div>
+        <div class="console-status">RUNNING</div>
+      </div>
+      <div class="console-body">
+        <div class="console-panel">
+          <h3>自动学习流水线</h3>
+          <div class="pipeline-row">
+            <div class="pipeline-index">01</div>
+            <div><div class="pipeline-name">推荐流拉取</div><div class="pipeline-meta">发现潜在学习内容</div></div>
+            <div class="pipeline-state">DONE</div>
+          </div>
+          <div class="pipeline-row">
+            <div class="pipeline-index">02</div>
+            <div><div class="pipeline-name">封面快速过滤</div><div class="pipeline-meta">OCR 与视觉质量筛选</div></div>
+            <div class="pipeline-state">DONE</div>
+          </div>
+          <div class="pipeline-row">
+            <div class="pipeline-index">03</div>
+            <div><div class="pipeline-name">AI 深度理解</div><div class="pipeline-meta">提取知识点与学习价值</div></div>
+            <div class="pipeline-state">LIVE</div>
+          </div>
+        </div>
+        <div class="console-panel">
+          <h3>本轮评估</h3>
+          <div class="score-card">
+            <div class="score-number">92</div>
+            <div class="score-label">综合学习价值评分</div>
+          </div>
+          <div class="console-tags">
+            <span>自动收藏</span>
+            <span>知识归档</span>
+            <span>AI 摘要</span>
+            <span>Docker 部署</span>
+            <span>长期运行</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Intro -->
+<section id="intro">
+  <div class="container">
+    <div class="intro-grid">
+      <div class="intro-card" data-reveal>
+        <div class="intro-eyebrow">Product Overview</div>
+        <h2>它不是简单的 B 站脚本，而是一套自动化学习工作流</h2>
+        <p>
+          bilibili_learning_bot 会像一个长期在线的学习助理，自动浏览推荐内容，判断哪些视频值得看、值得收藏、值得沉淀，最后把高价值内容整理成可复用的知识资产。
+        </p>
+        <p>
+          你可以把它理解成：一个专门服务学习和内容研究的 AI Agent，帮你把碎片化视频流转化为结构化知识库。
+        </p>
+        <div class="intro-points">
+          <div class="intro-point">
+            <div class="intro-point-index">01</div>
+            <div><h3>减少人工筛选成本</h3><span>不再手动刷推荐、看封面、点开判断，机器人先替你完成第一轮筛选。</span></div>
+          </div>
+          <div class="intro-point">
+            <div class="intro-point-index">02</div>
+            <div><h3>把内容消费变成知识沉淀</h3><span>AI 总结视频要点，提取关键词、学习价值和后续可复习的信息。</span></div>
+          </div>
+          <div class="intro-point">
+            <div class="intro-point-index">03</div>
+            <div><h3>适合长期无人值守运行</h3><span>部署到服务器、NAS、Termux 或 Docker 环境后，可持续自动工作。</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="intro-card" data-reveal>
+        <div class="intro-eyebrow">Use Cases</div>
+        <h2>适用场景</h2>
+        <div class="scenario-list">
+          <div class="scenario-item">
+            <strong>知识型创作者</strong>
+            <span>自动收集行业视频素材，提炼选题、观点和可引用知识点。</span>
+          </div>
+          <div class="scenario-item">
+            <strong>AI / 编程学习者</strong>
+            <span>持续发现高质量教程，减少低质量内容干扰，形成个人学习库。</span>
+          </div>
+          <div class="scenario-item">
+            <strong>自媒体运营</strong>
+            <span>观察热门内容方向，辅助判断哪些主题值得关注和二次创作。</span>
+          </div>
+          <div class="scenario-item">
+            <strong>自动化爱好者</strong>
+            <span>学习如何把平台 API、大模型和任务调度组合成完整 Agent 工作流。</span>
+          </div>
+        </div>
+        <div class="narration-box">
+          从视频发现到知识归档，系统会自动完成筛选、理解、评分和沉淀，让碎片化的视频内容转化为可持续积累的个人知识资产。
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section id="features">
+  <div class="container">
+    <div class="section-header" data-reveal>
+      <div class="section-tag">核心能力</div>
+      <h2 class="section-title">六大核心功能</h2>
+      <p class="section-desc">从内容发现到知识沉淀，全链路自动化</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card" data-reveal>
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h3>智能推荐流拉取</h3>
+        <p>自动从 B 站首页推荐流拉取视频，基于多维特征过滤低质内容，只保留高价值学习素材</p>
+      </div>
+      <div class="feature-card" data-reveal>
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        </div>
+        <h3>封面快速过滤</h3>
+        <p>OCR + 图像识别分析封面文字和视觉质量，秒级筛除非学习类、低质、重复内容</p>
+      </div>
+      <div class="feature-card" data-reveal>
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <h3>AI 深度理解</h3>
+        <p>调用大模型分析视频字幕/标题/简介/评论，提取核心知识点、判断内容质量与学习价值</p>
+      </div>
+      <div class="feature-card" data-reveal>
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <h3>评分收藏投币</h3>
+        <p>基于内容质量、学习价值、时效性等多维评分体系，自动为优质视频点赞、收藏、投币</p>
+      </div>
+      <div class="feature-card" data-reveal>
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <h3>知识归档入库</h3>
+        <p>自动生成结构化笔记，提取关键知识点、思维导图脉络，归档到本地或云端知识库</p>
+      </div>
+      <div class="feature-card" data-reveal>
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h3>全天候自动运行</h3>
+        <p>支持 Docker / Termux / Linux 多平台部署，定时任务 + 守护进程，7×24 小时不间断学习</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Flow -->
+<section id="flow">
+  <div class="container">
+    <div class="section-header" data-reveal>
+      <div class="section-tag">工作流程</div>
+      <h2 class="section-title">自主学习流水线</h2>
+      <p class="section-desc">一条命令，五个步骤，AI 自动完成从发现到归档的全过程</p>
+    </div>
+    <div class="flow-container" id="flowContainer">
+      <div class="flow-step" data-flow-step>
+        <span class="flow-step-icon">01</span>
+        <span class="flow-step-label">拉取推荐流</span>
+      </div>
+      <div class="flow-arrow" data-flow-arrow>→</div>
+      <div class="flow-step" data-flow-step>
+        <span class="flow-step-icon">02</span>
+        <span class="flow-step-label">封面快速过滤</span>
+      </div>
+      <div class="flow-arrow" data-flow-arrow>→</div>
+      <div class="flow-step" data-flow-step>
+        <span class="flow-step-icon">03</span>
+        <span class="flow-step-label">AI 深度理解</span>
+      </div>
+      <div class="flow-arrow" data-flow-arrow>→</div>
+      <div class="flow-step" data-flow-step>
+        <span class="flow-step-icon">04</span>
+        <span class="flow-step-label">评分收藏投币</span>
+      </div>
+      <div class="flow-arrow" data-flow-arrow>→</div>
+      <div class="flow-step" data-flow-step>
+        <span class="flow-step-icon">05</span>
+        <span class="flow-step-label">知识归档入库</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="container">
+    <div class="cta-inner" data-reveal>
+      <h2>开始使用 <span class="accent">bilibili_learning_bot</span></h2>
+      <p>基于 MIT License 开放源代码。克隆仓库、配置 API Key，一行命令即可启动。支持 Linux / Termux / Docker 多平台部署。</p>
+      <div class="cta-buttons">
+        <a href="https://bot1.bxya.top/" target="_blank" rel="noopener" class="btn-primary">
+          查看文档
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+        <a href="https://github.com/xiaoyaya191/bilibili_learning_bot" target="_blank" rel="noopener" class="btn-secondary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <p>基于 <a href="https://github.com/xiaoyaya191/bilibili_learning_bot" target="_blank" rel="noopener">MIT License</a> 开源 · Copyright © 2026</p>
+  </div>
+</footer>
+
+<script>
+// ===== Mobile Nav Toggle =====
+const navToggle = document.getElementById('navToggle');
+const navLinks = document.getElementById('navLinks');
+
+navToggle.addEventListener('click', () => {
+  navLinks.classList.toggle('open');
+});
+
+// Close nav on link click
+navLinks.querySelectorAll('a').forEach(link => {
+  link.addEventListener('click', () => {
+    navLinks.classList.remove('open');
+  });
+});
+
+// ===== Navbar scroll effect =====
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 50) {
+    navbar.classList.add('scrolled');
+  } else {
+    navbar.classList.remove('scrolled');
+  }
+});
+
+// ===== Scroll Reveal =====
+const observerOptions = {
+  threshold: 0.15,
+  rootMargin: '0px 0px -40px 0px'
+};
+
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, observerOptions);
+
+document.querySelectorAll('[data-reveal]').forEach(el => {
+  revealObserver.observe(el);
+});
+
+// ===== Flow Animation =====
+const flowSteps = document.querySelectorAll('[data-flow-step]');
+const flowArrows = document.querySelectorAll('[data-flow-arrow]');
+let flowAnimating = false;
+let flowInterval = null;
+
+function resetFlow() {
+  flowSteps.forEach(s => s.classList.remove('lit'));
+  flowArrows.forEach(a => a.classList.remove('lit'));
+}
+
+function runFlowAnimation() {
+  if (flowAnimating) return;
+  flowAnimating = true;
+
+  let i = 0;
+  const total = flowSteps.length;
+
+  function lightStep() {
+    if (i >= total) {
+      // All lit, pause then reset and restart
+      setTimeout(() => {
+        resetFlow();
+        flowAnimating = false;
+        // Restart after a pause
+        setTimeout(runFlowAnimation, 1200);
+      }, 1000);
+      return;
+    }
+
+    flowSteps[i].classList.add('lit');
+    if (i < total - 1 && flowArrows[i]) {
+      flowArrows[i].classList.add('lit');
+    }
+    i++;
+
+    setTimeout(lightStep, 550);
+  }
+
+  lightStep();
+}
+
+// Start flow animation when visible
+const flowObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      runFlowAnimation();
+      flowObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.3 });
+
+const flowContainer = document.getElementById('flowContainer');
+if (flowContainer) {
+  flowObserver.observe(flowContainer);
+}
+</script>
+
+</body>
+</html>

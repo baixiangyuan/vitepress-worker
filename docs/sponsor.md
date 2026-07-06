@@ -19,6 +19,7 @@
 <div>
 <h3>鸭鸭的赞助码</h3>
 <img src="https://zhifuma.bxya.top/Image_1783345526218_967.jpg" alt="鸭鸭的赞助码" width="250" style="border-radius: 8px;">
+<p><strong>代码主要负责人 / 项目提出者 / 创建者：鸭鸭</strong></p>
 </div>
 
 </div>
@@ -32,8 +33,3 @@
 - 🚀 新功能研发
 
 > 如有疑问请联系 [QQ 群](/contact)。
-
----
-
-### 代码主要负责人 / 项目提出者 / 创建者
-此项目由 **鸭鸭** 负责开发与维护。

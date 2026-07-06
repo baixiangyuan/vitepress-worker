@@ -1,5 +1,4 @@
-name = "vitepress-demo"
-main = "index.js"
+name = "vitepress-worker"
 compatibility_date = "2025-01-01"
 
 [site]
